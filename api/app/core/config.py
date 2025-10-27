@@ -2,16 +2,18 @@
 Application configuration management.
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
-from typing import List, Optional
+from pydantic import Field, field_validator
+from typing import List, Optional, Any
 import os
+import json
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
-    
+
     model_config = SettingsConfigDict(
         env_file=".env",
+        env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore"
     )
@@ -65,10 +67,44 @@ class Settings(BaseSettings):
     # Development
     DEV_MODE: bool = True
     DEBUG: bool = True
-    
+
     # Job Caching
     JOB_CACHE_TTL_HOURS: int = 24
     ENABLE_JOB_DEDUPLICATION: bool = True
+
+    # RSS Feed Settings
+    RSS_FEED_CACHE_TTL: int = 3600  # 1 hour in seconds
+    RSS_MAX_FEEDS_PER_SOURCE: int = 50
+
+    # Web Scraping Settings
+    SCRAPING_ENABLED: bool = False
+    SCRAPING_USER_AGENT: str = "Mozilla/5.0 (compatible; JobFinderBot/1.0)"
+    SCRAPING_DELAY_MIN: float = 2.0  # Minimum delay between requests in seconds
+    SCRAPING_DELAY_MAX: float = 5.0  # Maximum delay between requests
+
+    # Job Matching Algorithm
+    SIMILARITY_THRESHOLD: float = 0.3  # Minimum similarity score (0-1)
+    SKILLS_WEIGHT: float = 0.5
+    EXPERIENCE_WEIGHT: float = 0.25
+    LOCATION_WEIGHT: float = 0.15
+    TITLE_WEIGHT: float = 0.10
+
+    # Vector Database (for embeddings)
+    USE_VECTOR_DB: bool = False
+    VECTOR_DB_TYPE: str = "faiss"  # Options: faiss, pinecone
+    PINECONE_API_KEY: Optional[str] = None
+    PINECONE_ENVIRONMENT: Optional[str] = None
+
+    @field_validator("ALLOWED_EXTENSIONS", mode="before")
+    @classmethod
+    def parse_allowed_extensions(cls, v: Any) -> List[str]:
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                # If it's a comma-separated string
+                return [ext.strip() for ext in v.split(",")]
+        return v
 
 
 settings = Settings()

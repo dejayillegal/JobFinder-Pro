@@ -12,6 +12,9 @@ from .services.resume_parser import ResumeParser
 from .services.matcher import JobMatcher
 from .services.advanced_matcher import AdvancedJobMatcher
 from .services.job_deduplicator import job_deduplicator
+from .services.enhanced_deduplicator import enhanced_deduplicator
+from .services.rss_feed_service import rss_feed_service
+from .services.tfidf_matcher import tfidf_matcher
 from .connectors import (
     AdzunaConnector,
     IndeedConnector,
@@ -45,10 +48,10 @@ def get_all_connectors():
 
 
 def deduplicate_jobs(jobs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Remove duplicate jobs using advanced deduplicator."""
+    """Remove duplicate jobs using enhanced deduplicator."""
     if settings.ENABLE_JOB_DEDUPLICATION:
         source_priority = ["RapidAPI", "Adzuna", "RSSAggregator", "Indeed", "Jooble", "LinkedIn", "Naukri"]
-        return job_deduplicator.deduplicate_jobs(jobs, keep_source_priority=source_priority)
+        return enhanced_deduplicator.deduplicate_jobs(jobs, keep_source_priority=source_priority)
     else:
         seen_urls = set()
         unique_jobs = []
@@ -180,12 +183,21 @@ def process_resume_task(self, processing_job_id: str, user_id: int, file_path: s
             else:
                 job = existing_job
             
-            if settings.USE_ADVANCED_MATCHING:
-                matcher = AdvancedJobMatcher(spacy_model=settings.SPACY_MODEL)
-            else:
-                matcher = JobMatcher()
-            
-            match_result = matcher.calculate_match_score(parsed_data, job_data)
+            # Try TF-IDF matcher first (no external dependencies)
+            try:
+                match_result = tfidf_matcher.calculate_match_score(parsed_data, job_data)
+            except Exception as e:
+                logger.warning(f"TF-IDF matcher failed, falling back: {e}")
+                if settings.USE_ADVANCED_MATCHING:
+                    try:
+                        matcher = AdvancedJobMatcher(spacy_model=settings.SPACY_MODEL)
+                        match_result = matcher.calculate_match_score(parsed_data, job_data)
+                    except Exception:
+                        matcher = JobMatcher()
+                        match_result = matcher.calculate_match_score(parsed_data, job_data)
+                else:
+                    matcher = JobMatcher()
+                    match_result = matcher.calculate_match_score(parsed_data, job_data)
             
             if match_result["match_score"] >= 30:
                 job_match = JobMatch(
