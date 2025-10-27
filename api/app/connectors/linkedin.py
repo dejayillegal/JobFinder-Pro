@@ -11,10 +11,14 @@ logger = logging.getLogger(__name__)
 class LinkedInConnector(BaseConnector):
     """LinkedIn job search connector (Mock only for legal reasons)."""
     
-    def __init__(self, use_mock: bool = True):
+    def __init__(self, use_mock: bool = None):
         """Initialize LinkedIn connector."""
-        super().__init__(use_mock=True)
-        logger.warning("LinkedIn connector uses mock data only. Scraping LinkedIn may violate their Terms of Service.")
+        from ..core.config import settings
+        if use_mock is None:
+            use_mock = settings.MOCK_CONNECTORS
+        super().__init__(use_mock=use_mock)
+        if not use_mock:
+            logger.warning("LinkedIn connector uses mock data only. Scraping LinkedIn may violate their Terms of Service.")
     
     def search_jobs(
         self,

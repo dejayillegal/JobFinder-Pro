@@ -12,9 +12,12 @@ logger = logging.getLogger(__name__)
 class NaukriConnector(BaseConnector):
     """Naukri job search connector with robots.txt compliance."""
     
-    def __init__(self, use_mock: bool = True):
+    def __init__(self, use_mock: bool = None):
         """Initialize Naukri connector."""
-        super().__init__(use_mock=True)
+        from ..core.config import settings
+        if use_mock is None:
+            use_mock = settings.MOCK_CONNECTORS
+        super().__init__(use_mock=use_mock)
     
     def can_scrape(self) -> bool:
         """Check if scraping is allowed per robots.txt."""

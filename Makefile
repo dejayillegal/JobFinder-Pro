@@ -1,4 +1,4 @@
-.PHONY: help install dev test lint format clean docker-build docker-up deploy
+.PHONY: help install dev test lint format clean docker-build docker-up deploy test-unit test-integration test-coverage test-validate test-all
 
 # Default target
 help:
@@ -11,7 +11,11 @@ help:
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test            Run all tests"
-	@echo "  make test-cov        Run tests with coverage report"
+	@echo "  make test-unit       Run unit tests"
+	@echo "  make test-integration Run integration tests"
+	@echo "  make test-coverage   Run tests with coverage report"
+	@echo "  make test-validate   Validate setup and services"
+	@echo "  make test-all        Run all tests including validation and coverage"
 	@echo "  make lint            Run linting checks"
 	@echo "  make format          Auto-format code"
 	@echo ""
@@ -23,6 +27,7 @@ help:
 	@echo "  make docker-build    Build Docker images"
 	@echo "  make docker-up       Start services with Docker Compose"
 	@echo "  make docker-down     Stop Docker services"
+	@echo "  make docker-logs     View Docker logs"
 	@echo ""
 	@echo "Deployment:"
 	@echo "  make deploy-k8s      Deploy to Kubernetes with Helm"
@@ -47,13 +52,27 @@ dev:
 
 # Testing
 test:
-	@echo "🧪 Running tests..."
+	@echo "Running all tests..."
 	pytest tests/ -v
 
-test-cov:
-	@echo "🧪 Running tests with coverage..."
-	pytest tests/ -v --cov=api --cov-report=html --cov-report=term
-	@echo "📊 Coverage report: htmlcov/index.html"
+test-unit:
+	@echo "Running unit tests..."
+	pytest tests/ -v -m unit
+
+test-integration:
+	@echo "Running integration tests..."
+	pytest tests/ -v -m integration
+
+test-coverage:
+	@echo "Running tests with coverage..."
+	pytest tests/ -v --cov=api --cov-report=term-missing --cov-report=html
+
+test-validate:
+	@echo "Validating setup..."
+	python tests/validate_setup.py
+
+test-all: test-validate test-coverage
+	@echo "All tests completed!"
 
 # Linting
 lint:

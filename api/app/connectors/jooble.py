@@ -11,9 +11,12 @@ logger = logging.getLogger(__name__)
 class JoobleConnector(BaseConnector):
     """Jooble job search connector."""
     
-    def __init__(self, use_mock: bool = True):
+    def __init__(self, use_mock: bool = None):
         """Initialize Jooble connector."""
-        super().__init__(use_mock=True)
+        from ..core.config import settings
+        if use_mock is None:
+            use_mock = settings.MOCK_CONNECTORS
+        super().__init__(use_mock=use_mock)
     
     def search_jobs(
         self,
