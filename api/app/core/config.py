@@ -95,6 +95,20 @@ class Settings(BaseSettings):
     PINECONE_API_KEY: Optional[str] = None
     PINECONE_ENVIRONMENT: Optional[str] = None
 
+    # RSS Feeds Configuration
+    RSS_FEEDS: str = ""  # Comma-separated list of RSS feed URLs
+    RATE_LIMIT_PER_SECOND: float = 2.0
+
+    # Privacy & Storage
+    STORE_RESUME_RAW: bool = False  # GDPR compliance - don't store raw by default
+    ANONYMIZE_JOBS: bool = True  # Anonymize job data
+    
+    # Embedding Backend
+    EMBEDDING_BACKEND: str = "tfidf"  # Options: tfidf, sbert
+    
+    # Alembic
+    ALEMBIC_INI: str = "alembic.ini"
+
     @field_validator("ALLOWED_EXTENSIONS", mode="before")
     @classmethod
     def parse_allowed_extensions(cls, v: Any) -> List[str]:
@@ -107,4 +121,11 @@ class Settings(BaseSettings):
         return v
 
 
-settings = Settings()
+# Singleton with error handling
+try:
+    settings = Settings()
+except Exception as e:
+    import sys
+    print(f"ERROR: Failed to load settings: {e}", file=sys.stderr)
+    print("Please check your .env file and ensure all required variables are set.", file=sys.stderr)
+    raise

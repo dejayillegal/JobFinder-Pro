@@ -4,16 +4,15 @@ Celery background tasks for resume processing and job matching.
 from typing import Dict, Any, List
 import logging
 from sqlalchemy.orm import Session
+
 from .celery_app import celery_app
 from .core.database import SessionLocal
 from .core.config import settings
-from .models import User, Resume, Job, JobMatch, ProcessingJob
+from .models import Resume, Job, JobMatch, ProcessingJob
 from .services.resume_parser import ResumeParser
 from .services.matcher import JobMatcher
 from .services.advanced_matcher import AdvancedJobMatcher
-from .services.job_deduplicator import job_deduplicator
 from .services.enhanced_deduplicator import enhanced_deduplicator
-from .services.rss_feed_service import rss_feed_service
 from .services.tfidf_matcher import tfidf_matcher
 from .connectors import (
     AdzunaConnector,
@@ -160,7 +159,13 @@ def process_resume_task(self, processing_job_id: str, user_id: int, file_path: s
         processing_job.progress = 70
         db.commit()
         
+        from .utils.privacy import privacy_manager
+        
         for job_data in all_jobs:
+            # Anonymize job data if configured
+            if settings.ANONYMIZE_JOBS:
+                job_data = privacy_manager.anonymize_job_data(job_data)
+            
             external_id = f"{job_data['source']}:{job_data['url']}"
             
             existing_job = db.query(Job).filter(Job.external_id == external_id).first()

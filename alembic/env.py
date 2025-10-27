@@ -1,25 +1,44 @@
-"""Alembic environment configuration."""
-from logging.config import fileConfig
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-from alembic import context
+
+"""
+Alembic migration environment.
+"""
 import os
 import sys
+from logging.config import fileConfig
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from sqlalchemy import engine_from_config
+from sqlalchemy import pool
 
-from api.app.core.database import Base
-from api.app.core.config import settings
-from api.app.models import User, Resume, Job, JobMatch, ProcessingJob
+from alembic import context
 
+# Add parent directory to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Try to import settings, fallback to environment variable
+try:
+    from api.app.core.config import settings
+    DATABASE_URL = settings.DATABASE_URL
+except Exception as e:
+    print(f"Warning: Could not import settings: {e}", file=sys.stderr)
+    DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./jobfinder.db")
+
+# Import models
+try:
+    from api.app.models import Base
+    target_metadata = Base.metadata
+except Exception as e:
+    print(f"Warning: Could not import models: {e}", file=sys.stderr)
+    target_metadata = None
+
+# Alembic Config object
 config = context.config
 
+# Interpret the config file for Python logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = Base.metadata
-
-config.set_main_option('sqlalchemy.url', settings.DATABASE_URL)
+# Override sqlalchemy.url with DATABASE_URL
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 
 def run_migrations_offline() -> None:
@@ -39,14 +58,15 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata
         )
 
         with context.begin_transaction():
