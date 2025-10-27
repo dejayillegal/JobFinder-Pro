@@ -96,3 +96,11 @@ htmlcov/
 logs/
 .env
 .env.bak
+.venv/
+venv/
+requirements.txt.bak
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
