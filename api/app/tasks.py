@@ -6,48 +6,65 @@ import logging
 from sqlalchemy.orm import Session
 from .celery_app import celery_app
 from .core.database import SessionLocal
+from .core.config import settings
 from .models import User, Resume, Job, JobMatch, ProcessingJob
 from .services.resume_parser import ResumeParser
 from .services.matcher import JobMatcher
+from .services.advanced_matcher import AdvancedJobMatcher
+from .services.job_deduplicator import job_deduplicator
 from .connectors import (
     AdzunaConnector,
     IndeedConnector,
     JoobleConnector,
     LinkedInConnector,
-    NaukriConnector
+    NaukriConnector,
+    RSSAggregator,
+    RapidAPIConnector
 )
 
 logger = logging.getLogger(__name__)
 
 
 def get_all_connectors():
-    """Get list of all job connectors."""
-    return [
+    """Get list of all job connectors including advanced ones."""
+    connectors = [
+        RSSAggregator(),
+        RapidAPIConnector(),
         AdzunaConnector(),
-        IndeedConnector(),
-        JoobleConnector(),
-        LinkedInConnector(),
-        NaukriConnector()
+        IndeedConnector()
     ]
+    
+    if not settings.MOCK_CONNECTORS:
+        connectors.extend([
+            JoobleConnector(),
+            LinkedInConnector(),
+            NaukriConnector()
+        ])
+    
+    return connectors
 
 
 def deduplicate_jobs(jobs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Remove duplicate jobs by URL and fuzzy title/company matching."""
-    seen_urls = set()
-    unique_jobs = []
-    
-    for job in jobs:
-        url = job.get("url", "")
+    """Remove duplicate jobs using advanced deduplicator."""
+    if settings.ENABLE_JOB_DEDUPLICATION:
+        source_priority = ["RapidAPI", "Adzuna", "RSSAggregator", "Indeed", "Jooble", "LinkedIn", "Naukri"]
+        return job_deduplicator.deduplicate_jobs(jobs, keep_source_priority=source_priority)
+    else:
+        seen_urls = set()
+        unique_jobs = []
         
-        if url and url in seen_urls:
-            continue
+        for job in jobs:
+            url = job.get("url", "")
+            
+            if url and url in seen_urls:
+                continue
+            
+            if url:
+                seen_urls.add(url)
+            
+            unique_jobs.append(job)
         
-        if url:
-            seen_urls.add(url)
-        
-        unique_jobs.append(job)
-    
-    return unique_jobs
+        return unique_jobs
 
 
 @celery_app.task(bind=True)
@@ -163,7 +180,11 @@ def process_resume_task(self, processing_job_id: str, user_id: int, file_path: s
             else:
                 job = existing_job
             
-            matcher = JobMatcher()
+            if settings.USE_ADVANCED_MATCHING:
+                matcher = AdvancedJobMatcher(spacy_model=settings.SPACY_MODEL)
+            else:
+                matcher = JobMatcher()
+            
             match_result = matcher.calculate_match_score(parsed_data, job_data)
             
             if match_result["match_score"] >= 30:

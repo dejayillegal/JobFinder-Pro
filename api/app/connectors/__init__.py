@@ -5,6 +5,8 @@ from .indeed import IndeedConnector
 from .jooble import JoobleConnector
 from .linkedin import LinkedInConnector
 from .naukri import NaukriConnector
+from .rss_aggregator import RSSAggregator
+from .rapidapi_connector import RapidAPIConnector
 
 __all__ = [
     "BaseConnector",
@@ -12,5 +14,7 @@ __all__ = [
     "IndeedConnector",
     "JoobleConnector",
     "LinkedInConnector",
-    "NaukriConnector"
+    "NaukriConnector",
+    "RSSAggregator",
+    "RapidAPIConnector"
 ]
