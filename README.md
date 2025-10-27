@@ -34,6 +34,7 @@ JobFinder Pro is a complete job matching platform that uses machine learning to 
 
 **For complete local development setup instructions, see [SETUP_LOCAL.md](SETUP_LOCAL.md)**
 **For production deployment guide, see [SETUP.md](SETUP.md)**
+**For free platform deployment (Render, Vercel, Railway), see [DEPLOYMENT_FREE_PLATFORMS.md](DEPLOYMENT_FREE_PLATFORMS.md)**
 
 Run the automated setup script:
 
