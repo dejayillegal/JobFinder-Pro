@@ -20,8 +20,10 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
-# Load environment
-export $(cat .env | grep -v '^#' | xargs)
+# Load environment (properly handle values with special characters)
+set -a
+source .env
+set +a
 
 echo -e "\n${YELLOW}Checking Python dependencies...${NC}"
 pip install -q -r requirements.txt
