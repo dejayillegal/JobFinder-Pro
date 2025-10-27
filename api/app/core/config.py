@@ -26,8 +26,8 @@ class Settings(BaseSettings):
 
     # API Configuration
     API_HOST: str = "0.0.0.0"
-    API_PORT: int = 5000
-    FRONTEND_URL: str = "http://localhost:3000"
+    API_PORT: int = 8000
+    FRONTEND_URL: str = "http://localhost:5000"
 
     # Job connector settings
     MOCK_CONNECTORS: bool = Field(default=False, env="MOCK_CONNECTORS")
