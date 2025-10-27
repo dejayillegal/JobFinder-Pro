@@ -1,0 +1,106 @@
+FIX Pydantic CONFIG (IMMEDIATE)
+
+Replace fragile settings imports with a robust Pydantic BaseSettings pattern that uses .env (or ENV_FILE) and only validates required vars on startup with explicit, helpful error messages.
+
+Ensure alembic/env.py will not crash when running alembic commands in CI: wrap imports of app settings in try/except and fallback to os.environ["DATABASE_URL"] default.
+
+Add unit test(s) under tests/ to validate config loads with .env.example values (a simple test that imports settings and checks DATABASE_URL present or raises a clear error).
+
+UPDATE .env.example
+
+Ensure .env.example contains every env var the app expects (DATABASE_URL, REDIS_URL, ADZUNA_* if used, RSS_FEEDS, RATE_LIMIT_PER_SECOND, EMBEDDING_BACKEND, STORE_RESUME_RAW, ANONYMIZE_JOBS, ALEMBIC_INI). Provide safe defaults where possible. Commit as chore: update .env.example.
+
+ALTERNATIVE JOB-SOURCE IMPLEMENTATION (no platform APIs)
+Implement a modular, pluggable job-source interface and add at least two non-platform-API sources:
+a. RSS/Atom feed collector (async, httpx or aiohttp, feedparser) — configurable via RSS_FEEDS env var (comma-separated).
+b. Playwright-based conservative page scraper service with rate-limiting and robots.txt respect (headless; fallback to requests+BeautifulSoup if Playwright not available).
+
+Create an abstract base class app/scrapers/base.py and concrete app/scrapers/rss_scraper.py and app/scrapers/playwright_scraper.py. Use async generators to yield normalized job dicts with fields: source, title, company, location, description, url, posted_at, raw.
+
+Add rate-limiter util app/utils/rate_limiter.py (async token / interval limiter) and integrate it into scrapers.
+
+Add job deduplication logic (hash URL or canonicalized title+company+location) before DB insert.
+
+JOB MATCHER & EMBEDDING (pluggable)
+
+Add a resume↔job matcher app/matcher.py supporting both TF-IDF fallback and SentenceTransformer embedding if installed. Implement:
+
+skill extraction using spaCy (fallback to curated keyword list),
+
+TF-IDF vectorizer pipeline (scikit-learn),
+
+optional sentence-transformers usage for SBERT embeddings,
+
+similarity scoring function that weights Skills (60%), Experience (20%), Title (10%), Location (10%).
+
+Add an interface to store and retrieve embeddings (FAISS example under app/vector_store/faiss_store.py) but make it pluggable (config-driven). If FAISS cannot be installed in Replit, persist vectors as JSON in DB for demo.
+
+DB MODELS & ALEMBIC
+
+Ensure async-compatible models exist (SQLModel/SQLAlchemy) for Job, Resume, Embedding. Add or fix app/db/models.py so it matches current migrations.
+
+Provide an Alembic migration file in alembic/versions/ that creates jobs, resumes, and embeddings tables if missing. Ensure alembic env.py references the fallback DATABASE_URL when settings import fails (see task 2).
+
+Run alembic upgrade head locally to validate migrations succeed in the container.
+
+API ENDPOINTS (FastAPI)
+
+Add async endpoints to import jobs and match resumes:
+
+POST /import/rss triggers RSS import (returns count)
+
+POST /import/scrape accepts JSON {start_urls: []} and triggers Playwright scraper (returns count)
+
+POST /resumes upload resume text (optionally file) -> store sanitized resume (respect STORE_RESUME_RAW flag)
+
+GET /match/{resume_id}?top_k=10 -> returns top matching jobs with detailed component scores
+
+Ensure endpoints follow FastAPI async best practices and include error handling and rate-limit guards for external calls.
+
+BACKGROUND TASKS & SCHEDULER
+
+Wire APScheduler (or Celery if present in repo) to run periodic RSS polling and job ingestion in background. If Celery already present, ensure tasks use the new scrapers. Add a lightweight fallback using APScheduler for Replit/demo environments.
+
+CACHING & RATE LIMITING
+
+Integrate Redis caching for job dedupe and transient caches if REDIS_URL provided. Otherwise use in-memory TTL cache for demo. Implement rate limiting for external HTTP requests via the rate limiter util created above.
+
+TESTING & CI
+
+Add unit tests:
+
+Config loading (tests/config_test.py)
+
+RSS scraper (mock HTTP responses with respx or httpx mocking)
+
+Matcher compute_score (tests/matcher_test.py)
+
+Run pytest -q and fix failing tests. Update GitHub Actions workflow .github/workflows/* (if present) so CI runs tests and alembic upgrade --sql check.
+
+DOCUMENTATION & README UPDATES
+
+Update README and QUICK_START.md with clear Replit-specific instructions to run without platform APIs: how to set RSS_FEEDS, how to run Playwright (note Replit caveats), and how to switch embedding backend to tfidf vs sbert. Commit as docs: update quickstart for no-API job sources.
+
+GDPR & DATA PRIVACY
+
+Enforce STORE_RESUME_RAW env toggle: default False. If False, only store a sanitized or truncated resume text by default (configurable). Ensure ANONYMIZE_JOBS controls whether raw job payloads are stored. Add code comments explaining storage policy. Add test verifying sanitized storage.
+
+LINT, FORMAT, COMMIT, PR
+
+Run black . and ruff (or repo recommended linter) and fix style issues. Commit changes logically. Open PR as above.
+
+--- OUTPUT REQUIRED (in PR description) ---
+
+Short summary of changes and instructions to run locally (commands).
+
+Any assumptions you made (e.g., missing env vars) and any manual steps still required (e.g., install Playwright browsers on Replit).
+
+Test summary: pytest output and any non-fatal warnings.
+
+A list of added/modified files and short purpose for each.
+
+--- SAFETY & RESPECT RULES ---
+
+Respect robots.txt and add a conservative default rate limit (env RATE_LIMIT_PER_SECOND, default 2). Do not bypass site protections.
+
+Do not add or commit API keys or secrets. Use .env and .env.example only.
