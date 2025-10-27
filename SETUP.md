@@ -1,4 +1,3 @@
-
 # JobFinder Pro - Complete Setup Guide
 
 This guide provides step-by-step instructions for setting up JobFinder Pro in different environments.
@@ -13,7 +12,28 @@ This guide provides step-by-step instructions for setting up JobFinder Pro in di
 
 ---
 
-## Local Development Setup
+## Getting Real Job Data
+
+To fetch real jobs instead of mock data:
+
+1. **Get Adzuna API Credentials** (FREE):
+   - Sign up at https://developer.adzuna.com/
+   - Create an application
+   - Copy your App ID and App Key
+
+2. **Update .env file**:
+   ```bash
+   MOCK_CONNECTORS=false
+   ADZUNA_APP_ID=your_actual_app_id
+   ADZUNA_APP_KEY=your_actual_app_key
+   ```
+
+3. **Restart API Server**:
+   - Adzuna will fetch real jobs from India job market
+   - Indeed will use RSS feeds (no credentials needed)
+   - Other connectors will use mock data until configured
+
+## Local Setup (macOS/Linux)
 
 ### Prerequisites
 

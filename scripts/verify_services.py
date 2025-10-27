@@ -63,6 +63,19 @@ def check_frontend():
         print(f"❌ Frontend: Not accessible - {e}")
         return False
 
+def check_api_credentials():
+    """Check if API credentials are configured."""
+    try:
+        if settings.ADZUNA_APP_ID and settings.ADZUNA_APP_KEY:
+            print("✅ API Credentials: Adzuna configured")
+            return True
+        else:
+            print("⚠️  API Credentials: Using mock data (run scripts/setup_apis.py)")
+            return False
+    except Exception as e:
+        print(f"❌ API Credentials: Error - {e}")
+        return False
+
 def main():
     print("🔍 Verifying JobFinder Pro Services...\n")
     
@@ -70,7 +83,8 @@ def main():
         "Database": check_database(),
         "Redis": check_redis(),
         "API Server": check_api(),
-        "Frontend": check_frontend()
+        "Frontend": check_frontend(),
+        "API Credentials": check_api_credentials()
     }
     
     print("\n" + "="*50)

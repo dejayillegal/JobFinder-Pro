@@ -102,11 +102,29 @@ def process_resume_task(self, processing_job_id: str, user_id: int, file_path: s
         all_jobs = []
         connectors = get_all_connectors()
         
-        query = "QA Engineer" if "qa" in str(parsed_data.get("skills", [])).lower() else "Software Engineer"
+        # Build query from resume data
+        skills = parsed_data.get("skills", [])
+        current_role = parsed_data.get("current_role", "")
+        
+        # Determine best query based on resume
+        if current_role:
+            query = current_role
+        elif skills:
+            # Use top skills to form query
+            primary_skills = skills[:3]
+            query = " ".join(primary_skills)
+        else:
+            query = "Software Engineer"
+        
+        # Get preferred locations
+        locations = parsed_data.get("locations_preferred", ["India"])
+        primary_location = locations[0] if locations else "India"
+        
+        logger.info(f"Searching jobs with query: '{query}' in {primary_location}")
         
         for i, connector in enumerate(connectors):
             try:
-                jobs = connector.search_jobs(query=query, location="India", max_results=15)
+                jobs = connector.search_jobs(query=query, location=primary_location, max_results=15)
                 all_jobs.extend(jobs)
                 
                 progress = 30 + int((i + 1) / len(connectors) * 40)
