@@ -33,7 +33,7 @@ if lsof -Pi :3000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
     sleep 2
 fi
 
-echo -e "\n${GREEN}✅ Starting Frontend on port 3000...${NC}"
-echo -e "${BLUE}Frontend: http://0.0.0.0:3000${NC}\n"
+echo -e "\n${GREEN}✅ Starting Frontend on port 5000...${NC}"
+echo -e "${BLUE}Frontend: http://0.0.0.0:5000${NC}\n"
 
-npm run dev
+npm run dev -- -p 5000
