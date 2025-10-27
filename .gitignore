@@ -94,3 +94,5 @@ htmlcov/
 # Logs
 *.log
 logs/
+.env
+.env.bak
