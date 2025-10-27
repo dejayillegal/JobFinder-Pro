@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "bash", "python-3.11"]
+modules = ["bash", "nodejs-20", "python-3.11"]
 [agent]
 expertMode = true
 
@@ -26,13 +26,13 @@ args = "Backend API"
 name = "Frontend"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd frontend && npm run dev"
 waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [[workflows.workflow]]
 name = "API Server"
@@ -73,8 +73,8 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 8000
-externalPort = 8000
+localPort = 38285
+externalPort = 3001
 
 [deployment]
 deploymentTarget = "autoscale"
