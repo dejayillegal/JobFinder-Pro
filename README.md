@@ -81,9 +81,40 @@ cd frontend && npm install && cd ..
 ```
 
 ### Access the Application
-- Frontend: http://localhost:3000
-- API Docs: http://localhost:5000/docs
-- Metrics: http://localhost:5000/metrics
+- Frontend: http://localhost:3000 (development) or http://localhost:5000 (production)
+- API Docs: http://localhost:8000/docs
+- Metrics: http://localhost:8000/metrics
+
+### Production Mode (Local)
+
+To run in production mode without Docker:
+
+```bash
+# Option 1: Using the production startup script
+chmod +x scripts/production_start.sh
+./scripts/production_start.sh
+
+# Option 2: Using PM2 process manager
+npm install -g pm2
+pm2 start ecosystem.config.js
+pm2 save
+
+# Option 3: Using Supervisord (Linux)
+# See SETUP.md for Supervisord configuration
+sudo supervisorctl start all
+```
+
+Stop production services:
+```bash
+# If using startup script
+./scripts/production_stop.sh
+
+# If using PM2
+pm2 stop all
+
+# If using Supervisord
+sudo supervisorctl stop all
+```
 
 ## 📁 Project Structure
 
@@ -257,26 +288,95 @@ All logs are in JSON format for easy parsing:
 
 ## 🚢 Deployment
 
-### Docker Compose (Local)
+### Local Deployment (Production Mode)
 
+For a production-like environment on your local machine:
+
+1. **Set up production environment file**:
 ```bash
-docker-compose up -d
+cp .env.example .env.production
+# Edit .env.production with production settings (DEBUG=false, secure keys, etc.)
 ```
 
-### Kubernetes (Production)
+2. **Install process manager (choose one)**:
 
+**Option A - Using Supervisord** (Recommended for Linux):
 ```bash
-# Using Helm
-helm install jobfinder ./k8s/helm -f values.yaml
+# Ubuntu/Debian
+sudo apt-get install supervisor
 
-# Using kubectl
-kubectl apply -f k8s/
+# macOS
+brew install supervisor
 ```
+
+Create `/etc/supervisor/conf.d/jobfinder.conf`:
+```ini
+[program:jobfinder_api]
+command=uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 4
+directory=/path/to/jobfinder-pro
+user=youruser
+autostart=true
+autorestart=true
+
+[program:jobfinder_celery]
+command=celery -A api.app.celery_app worker --loglevel=info --concurrency=4
+directory=/path/to/jobfinder-pro
+user=youruser
+autostart=true
+autorestart=true
+
+[program:jobfinder_frontend]
+command=npm run start
+directory=/path/to/jobfinder-pro/frontend
+user=youruser
+autostart=true
+autorestart=true
+```
+
+Start services:
+```bash
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl start all
+```
+
+**Option B - Using PM2** (Cross-platform):
+```bash
+npm install -g pm2
+
+# Create ecosystem.config.js (see SETUP.md for full config)
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
+```
+
+3. **Optional: Set up Nginx reverse proxy**:
+```bash
+# Install Nginx
+sudo apt-get install nginx  # Ubuntu/Debian
+brew install nginx          # macOS
+
+# Configure Nginx (see SETUP.md for full config)
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+### Replit Deployment
+
+This project is already configured for Replit:
+1. Click the **Deploy** button at the top right
+2. Select deployment type (Autoscale recommended)
+3. Configure:
+   - **Build Command:** `cd frontend && npm run build`
+   - **Run Command:** `cd frontend && npm run start`
+4. Click **Deploy your project**
+
+Access your deployed app at `https://<your-repl-name>.<username>.repl.co`
 
 ### Environment-Specific Configuration
 
 - **Development**: Hot reload, debug logging, mock APIs
-- **Production**: Optimized builds, error reporting, real APIs
+- **Production**: Optimized builds, error reporting, real APIs (set `DEBUG=false` in .env)
 
 ## 🛠 Development Scripts
 

@@ -971,10 +971,15 @@ If you encounter issues not covered here:
 
 ```bash
 # Start development environment
-make dev
+./scripts/dev_start.sh
+
+# Or manually in separate terminals:
+# Terminal 1: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+# Terminal 2: celery -A api.app.celery_app worker --loglevel=info
+# Terminal 3: cd frontend && npm run dev
 
 # Run tests
-make test
+pytest tests/ -v
 
 # Run linting
 make lint
@@ -983,27 +988,71 @@ make lint
 make format
 
 # Create database migration
-make migrate-create
+alembic revision -m "description"
 
 # Apply migrations
-make migrate
+alembic upgrade head
 ```
 
 ### Production (Local Deployment)
 
+**Using Supervisord:**
 ```bash
-# Using Supervisord
+# Start all services
 sudo supervisorctl start all
+
+# Stop all services
 sudo supervisorctl stop all
+
+# Restart all services
 sudo supervisorctl restart all
+
+# Check status
 sudo supervisorctl status
 
-# Using PM2
+# View logs
+sudo tail -f /var/log/jobfinder/api.out.log
+sudo tail -f /var/log/jobfinder/celery.out.log
+sudo tail -f /var/log/jobfinder/frontend.out.log
+```
+
+**Using PM2:**
+```bash
+# Start all services
 pm2 start ecosystem.config.js
+
+# Stop all services
 pm2 stop all
+
+# Restart all services
 pm2 restart all
+
+# Check status
 pm2 status
+
+# View logs
 pm2 logs
+pm2 logs jobfinder-api
+pm2 logs jobfinder-celery
+pm2 logs jobfinder-frontend
+
+# Monitor in real-time
+pm2 monit
+```
+
+**Manual Start (without process manager):**
+```bash
+# Set production environment
+export $(cat .env.production | xargs)
+
+# Terminal 1 - API Server
+uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 4
+
+# Terminal 2 - Celery Worker
+celery -A api.app.celery_app worker --loglevel=info --concurrency=4
+
+# Terminal 3 - Frontend
+cd frontend && npm run build && npm run start
 ```
 
 ### Database
