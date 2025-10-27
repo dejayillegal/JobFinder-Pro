@@ -147,6 +147,222 @@ CREATE DATABASE jobfinder_pro;
 Create a `.env` file in the project root:
 
 ```bash
+
+
+---
+
+## Detailed Credential Setup Guide
+
+### 1. Database Credentials (PostgreSQL)
+
+**macOS Setup:**
+```bash
+# Install PostgreSQL
+brew install postgresql@15
+
+# Start PostgreSQL service
+brew services start postgresql@15
+
+# Create database
+createdb jobfinder
+
+# Your DATABASE_URL will be:
+DATABASE_URL=postgresql://localhost:5432/jobfinder
+```
+
+**Ubuntu/Linux Setup:**
+```bash
+# Install PostgreSQL
+sudo apt-get update
+sudo apt-get install postgresql postgresql-contrib
+
+# Start PostgreSQL
+sudo systemctl start postgresql
+
+# Create database and user
+sudo -u postgres createdb jobfinder
+sudo -u postgres createuser -s $USER
+
+# Your DATABASE_URL will be:
+DATABASE_URL=postgresql://localhost:5432/jobfinder
+```
+
+**Windows Setup:**
+1. Download PostgreSQL from https://www.postgresql.org/download/windows/
+2. Run installer and set a password (remember it!)
+3. Open pgAdmin or command prompt
+4. Create database: `CREATE DATABASE jobfinder;`
+5. Your DATABASE_URL will be:
+   ```
+   DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/jobfinder
+   ```
+
+**Custom User Setup (Optional):**
+```bash
+# Create dedicated user
+sudo -u postgres psql
+CREATE USER jobfinder_user WITH PASSWORD 'secure_password';
+GRANT ALL PRIVILEGES ON DATABASE jobfinder TO jobfinder_user;
+\q
+
+# Your DATABASE_URL will be:
+DATABASE_URL=postgresql://jobfinder_user:secure_password@localhost:5432/jobfinder
+```
+
+### 2. Redis Credentials
+
+**macOS Setup:**
+```bash
+# Install Redis
+brew install redis
+
+# Start Redis
+brew services start redis
+
+# Verify it's running
+redis-cli ping
+# Should return: PONG
+
+# Your REDIS_URL will be:
+REDIS_URL=redis://localhost:6379/0
+```
+
+**Ubuntu/Linux Setup:**
+```bash
+# Install Redis
+sudo apt-get update
+sudo apt-get install redis-server
+
+# Start Redis
+sudo systemctl start redis-server
+
+# Enable on boot (optional)
+sudo systemctl enable redis-server
+
+# Verify
+redis-cli ping
+
+# Your REDIS_URL will be:
+REDIS_URL=redis://localhost:6379/0
+```
+
+**Windows Setup:**
+1. Download Redis from https://github.com/microsoftarchive/redis/releases
+2. Extract and run `redis-server.exe`
+3. Or use WSL (Windows Subsystem for Linux) and follow Linux instructions
+
+### 3. Generate Security Keys
+
+**Generate SECRET_KEY and JWT_SECRET_KEY:**
+```bash
+# Generate SECRET_KEY
+python -c "import secrets; print('SECRET_KEY=' + secrets.token_urlsafe(32))"
+
+# Generate JWT_SECRET_KEY
+python -c "import secrets; print('JWT_SECRET_KEY=' + secrets.token_urlsafe(32))"
+```
+
+Copy the output and paste into your `.env` file.
+
+**Example output:**
+```
+SECRET_KEY=vR3k9Jm2Wp8Qd5Hn7Lz4Cx6Vb1Nt0Ys
+JWT_SECRET_KEY=aB4cD8eF2gH6iJ0kL5mN9oP3qR7sT1uV
+```
+
+### 4. Adzuna API Credentials (Free - Real Jobs)
+
+**Step-by-step:**
+1. Go to https://developer.adzuna.com/
+2. Click "Sign Up" in the top right
+3. Fill in your details:
+   - Email
+   - Password
+   - Accept terms
+4. Verify your email
+5. Log in to the developer portal
+6. Click "Create Application"
+7. Fill in:
+   - Application Name: "JobFinder Pro Dev"
+   - Description: "Job matching platform for development"
+8. Click "Create"
+9. Copy your credentials:
+   - App ID (looks like: `5af39d52`)
+   - App Key (looks like: `7d7832b3b6611ce952d9e8495085b671`)
+10. Add to `.env`:
+    ```
+    ADZUNA_APP_ID=your_app_id_here
+    MOCK_CONNECTORS=false
+    ```
+
+**Free Tier Limits:**
+- 1000 API calls per month
+- No credit card required
+- Instant activation
+
+### 5. Complete .env File Example
+
+After gathering all credentials, your `.env` should look like:
+
+```env
+# Database
+DATABASE_URL=postgresql://localhost:5432/jobfinder
+
+# Redis
+REDIS_URL=redis://localhost:6379/0
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/1
+
+# Security (use your generated keys)
+SECRET_KEY=vR3k9Jm2Wp8Qd5Hn7Lz4Cx6Vb1Nt0Ys
+JWT_SECRET_KEY=aB4cD8eF2gH6iJ0kL5mN9oP3qR7sT1uV
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
+
+# API Configuration
+API_HOST=0.0.0.0
+API_PORT=8000
+FRONTEND_URL=http://localhost:3000
+
+# Application
+DEBUG=true
+DEV_MODE=true
+LOG_LEVEL=INFO
+
+# Job Connectors
+MOCK_CONNECTORS=false
+ADZUNA_APP_ID=5af39d52
+INDEED_API_KEY=
+JOOBLE_API_KEY=
+LINKEDIN_API_KEY=
+NAUKRI_API_KEY=
+
+# File Upload
+ALLOWED_EXTENSIONS=["pdf", "docx", "txt"]
+```
+
+### 6. Verify Your Setup
+
+After setting up `.env`, verify everything works:
+
+```bash
+# Check PostgreSQL
+pg_isready
+# Should return: /tmp:5432 - accepting connections
+
+# Check Redis
+redis-cli ping
+# Should return: PONG
+
+# Test database connection
+python -c "from api.app.core.database import engine; print('Database connected!')"
+
+# Run preflight check
+./scripts/preflight_check.sh
+```
+
+
 cp .env.example .env
 ```
 
