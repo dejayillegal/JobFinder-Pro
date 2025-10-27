@@ -1,7 +1,7 @@
 """
 Application configuration management.
 """
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 from typing import List, Optional
 import os
@@ -9,9 +9,15 @@ import os
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
+    
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+        extra="ignore"
+    )
 
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./jobfinder.db")
+    DATABASE_URL: str = Field(default_factory=lambda: os.getenv("DATABASE_URL", "sqlite:///./jobfinder.db"))
 
     # Redis & Celery
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -31,17 +37,19 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5000"
 
     # Job connector settings
-    MOCK_CONNECTORS: bool = Field(default=False, env="MOCK_CONNECTORS")
-    ADZUNA_APP_ID: Optional[str] = Field(default=None, env="ADZUNA_APP_ID")
-    ADZUNA_APP_KEY: Optional[str] = Field(default=None, env="ADZUNA_APP_KEY")
-    JOOBLE_API_KEY: str = ""
-    INDEED_PUBLISHER_ID: str = ""
+    MOCK_CONNECTORS: bool = False
+    ADZUNA_APP_ID: Optional[str] = None
+    ADZUNA_APP_KEY: Optional[str] = None
+    RAPIDAPI_KEY: Optional[str] = None
+    JOOBLE_API_KEY: Optional[str] = None
+    INDEED_PUBLISHER_ID: Optional[str] = None
 
     # Resume Processing
     MAX_FILE_SIZE_MB: int = 10
     ALLOWED_EXTENSIONS: List[str] = ["pdf", "docx", "txt"]
     SPACY_MODEL: str = "en_core_web_sm"
     USE_EMBEDDINGS: bool = False
+    USE_ADVANCED_MATCHING: bool = True
 
     # Location Defaults
     DEFAULT_COUNTRY: str = "India"
@@ -57,10 +65,10 @@ class Settings(BaseSettings):
     # Development
     DEV_MODE: bool = True
     DEBUG: bool = True
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    
+    # Job Caching
+    JOB_CACHE_TTL_HOURS: int = 24
+    ENABLE_JOB_DEDUPLICATION: bool = True
 
 
 settings = Settings()

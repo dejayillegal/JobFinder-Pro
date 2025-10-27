@@ -4,7 +4,7 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
-packages = ["file", "libxcrypt"]
+packages = ["file", "glibcLocales", "libxcrypt"]
 
 [workflows]
 runButton = "Project"
@@ -71,6 +71,10 @@ externalPort = 3000
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 8000
+externalPort = 8000
 
 [[ports]]
 localPort = 38285

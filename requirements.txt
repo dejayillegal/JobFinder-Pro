@@ -152,3 +152,5 @@ sqlalchemy
 urllib3
 uvicorn[standard]
 websockets
+feedparser
+scikit-learn
