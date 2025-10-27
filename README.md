@@ -2,264 +2,202 @@
 
 **Production-grade SaaS platform for resume-driven job matching powered by AI**
 
-JobFinder Pro is a complete job matching platform that uses machine learning to match resumes with relevant job postings from multiple sources (Adzuna, Indeed, Jooble, LinkedIn, Naukri). Upload your resume, and the system will find the best jobs for you with explainable AI scoring.
+JobFinder Pro is a complete job matching platform that uses machine learning to match resumes with relevant job postings from multiple sources (Adzuna, Indeed RSS, Jooble, LinkedIn, Naukri). Upload your resume, and the system will find the best jobs for you with explainable AI scoring.
 
 ## 🌟 Key Features
 
 ### Core Functionality
 - **Resume Parsing**: Supports PDF, DOCX, and TXT formats with advanced NLP extraction (spaCy)
-- **Multi-Source Job Aggregation**: Fetches jobs from Adzuna API with mock connectors for Indeed, Jooble, LinkedIn, and Naukri
-- **AI-Powered Matching**: Explainable scoring algorithm (Skills 60%, Seniority 25%, Location 15%)
+- **Multi-Source Job Aggregation**: 
+  - Adzuna API (real jobs with free tier)
+  - RSS feed aggregation for Indeed and other sources
+  - Mock connectors for testing and development
+- **AI-Powered Matching**: Explainable TF-IDF scoring algorithm with skills, experience, and location matching
 - **India-Focus**: Optimized for India-wide jobs with priority for Bangalore and Remote positions
 - **Background Processing**: Celery + Redis for async job processing
 - **JWT Authentication**: Secure user authentication with access and refresh tokens
+- **Privacy-First**: GDPR-compliant with configurable data retention
 
 ### Technical Stack
 - **Backend**: FastAPI + SQLAlchemy + Alembic + PostgreSQL
 - **Frontend**: Next.js + TypeScript + Tailwind CSS
-- **ML/NLP**: spaCy for entity extraction and skills matching
+- **ML/NLP**: spaCy for entity extraction and TF-IDF for matching
 - **Task Queue**: Celery + Redis for background processing
 - **Observability**: Prometheus metrics, structured logging (JSON)
 - **Database**: PostgreSQL with Alembic migrations
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Option 1: Replit Deployment (Recommended)
+
+This project is already configured for Replit:
+
+1. **Environment Setup**: All secrets are configured in Replit Secrets
+2. **Start Services**:
+   - Click the **Run** button to start the Frontend
+   - Use workflow dropdown to start "Backend API"
+   - Use workflow dropdown to start "Celery Worker" (optional, for background jobs)
+3. **Access**:
+   - Frontend: Your Repl's webview URL
+   - API Docs: `https://your-repl-url.repl.co:8000/docs`
+
+### Option 2: Local Development
+
+**Prerequisites:**
 - Python 3.11+
 - Node.js 18+
-- PostgreSQL database
-- Redis server (for Celery)
+- PostgreSQL 15+
+- Redis 7+
 
-### Automated Setup (Recommended)
-
-**For complete local development setup instructions, see [SETUP_LOCAL.md](SETUP_LOCAL.md)**
-**For production deployment guide, see [SETUP.md](SETUP.md)**
-**For free platform deployment (Render, Vercel, Railway), see [DEPLOYMENT_FREE_PLATFORMS.md](DEPLOYMENT_FREE_PLATFORMS.md)**
-
-Run the automated setup script:
+**Automated Setup:**
 
 ```bash
-# Clone the repository
+# Clone repository
 git clone <repository-url>
 cd jobfinder-pro
 
-# Run automated setup (Linux/macOS)
+# Run automated setup
+chmod +x scripts/local_setup.sh
 ./scripts/local_setup.sh
-
-# Or on Windows (use Git Bash or WSL)
-bash scripts/local_setup.sh
 ```
 
-### Manual Setup
+**Manual Setup:**
 
-If you prefer manual setup or the script fails:
-
-1. **Set up environment variables**
 ```bash
+# 1. Environment setup
 cp .env.example .env
-# Edit .env and add your credentials
-```
+# Edit .env with your credentials
 
-2. **Install Python dependencies**
-```bash
+# 2. Install Python dependencies
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
-```
 
-3. **Create database and run migrations**
-```bash
+# 3. Setup database
 createdb jobfinder
 alembic upgrade head
-```
 
-4. **Install frontend dependencies**
-```bash
+# 4. Install frontend dependencies
 cd frontend && npm install && cd ..
+
+# 5. Start services (3 separate terminals)
+
+# Terminal 1 - Backend API
+uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Terminal 2 - Celery Worker
+celery -A api.app.celery_app worker --loglevel=info
+
+# Terminal 3 - Frontend
+cd frontend && npm run dev
 ```
 
-5. **Start all services**
-```bash
-./scripts/dev_start.sh
-```
-
-### Access the Application
-- Frontend: http://localhost:3000 (development) or http://localhost:5000 (production)
+**Access the Application:**
+- Frontend: http://localhost:5000
 - API Docs: http://localhost:8000/docs
 - Metrics: http://localhost:8000/metrics
-
-### Production Mode (Local)
-
-To run in production mode without Docker:
-
-```bash
-# Option 1: Using the production startup script
-chmod +x scripts/production_start.sh
-./scripts/production_start.sh
-
-# Option 2: Using PM2 process manager
-npm install -g pm2
-pm2 start ecosystem.config.js
-pm2 save
-
-# Option 3: Using Supervisord (Linux)
-# See SETUP.md for Supervisord configuration
-sudo supervisorctl start all
-```
-
-Stop production services:
-```bash
-# If using startup script
-./scripts/production_stop.sh
-
-# If using PM2
-pm2 stop all
-
-# If using Supervisord
-sudo supervisorctl stop all
-```
 
 ## 📁 Project Structure
 
 ```
 jobfinder-pro/
 ├── api/                          # Backend FastAPI application
-│   ├── main.py                   # Main FastAPI app entry point
-│   └── app/
-│       ├── core/                 # Core configuration and utilities
-│       │   ├── config.py         # Environment settings
-│       │   ├── database.py       # Database connection
-│       │   ├── security.py       # JWT and password hashing
-│       │   └── logging.py        # Structured logging
-│       ├── models/               # SQLAlchemy database models
-│       │   ├── user.py           # User model
-│       │   ├── resume.py         # Resume model
-│       │   └── job.py            # Job, JobMatch, ProcessingJob models
-│       ├── services/             # Business logic services
-│       │   ├── resume_parser.py  # Resume parsing (PDF/DOCX/TXT)
-│       │   └── matcher.py        # AI matching algorithm
-│       ├── connectors/           # Job source connectors
-│       │   ├── adzuna.py         # Adzuna API connector
-│       │   ├── indeed.py         # Indeed mock connector
-│       │   ├── jooble.py         # Jooble mock connector
-│       │   ├── linkedin.py       # LinkedIn mock connector
-│       │   └── naukri.py         # Naukri mock connector
-│       ├── routes/               # API endpoints
-│       │   ├── auth.py           # Authentication endpoints
-│       │   ├── resume.py         # Resume upload endpoints
-│       │   ├── matches.py        # Job matches endpoints
-│       │   ├── admin.py          # Admin endpoints
-│       │   └── metrics.py        # Prometheus metrics
-│       ├── celery_app.py         # Celery configuration
-│       └── tasks.py              # Background tasks
+│   ├── app/
+│   │   ├── core/                 # Config, database, security
+│   │   ├── models/               # SQLAlchemy models
+│   │   ├── services/             # Business logic (parser, matcher)
+│   │   ├── connectors/           # Job source integrations
+│   │   ├── scrapers/             # RSS and web scrapers
+│   │   ├── routes/               # API endpoints
+│   │   └── utils/                # Utilities (privacy, rate limiting)
+│   └── main.py                   # FastAPI entry point
 ├── frontend/                     # Next.js frontend
-│   ├── pages/                    # Next.js pages
-│   │   ├── index.tsx             # Landing page
-│   │   ├── login.tsx             # Login page
-│   │   ├── register.tsx          # Registration page
-│   │   ├── upload.tsx            # Resume upload page
-│   │   └── matches.tsx           # Job matches dashboard
-│   └── lib/
-│       └── api.ts                # API client
+│   ├── pages/                    # React pages
+│   └── lib/                      # API client
 ├── alembic/                      # Database migrations
-│   └── versions/
-│       └── 001_initial_schema.py # Initial schema
 ├── tests/                        # Test suite
-│   ├── test_parser.py            # Resume parser tests
-│   ├── test_matcher.py           # Matching algorithm tests
-│   └── test_connectors.py        # Connector tests
+├── scripts/                      # Setup and utility scripts
 ├── docker/                       # Docker configurations
-│   ├── Dockerfile.api            # API Dockerfile
-│   ├── Dockerfile.frontend       # Frontend Dockerfile
-│   └── docker-compose.yml        # Local development setup
-├── k8s/                          # Kubernetes manifests
-│   └── helm/                     # Helm chart
-├── .github/
-│   └── workflows/
-│       └── ci.yml                # CI/CD pipeline
-├── scripts/                      # Utility scripts
-│   ├── dev_start.sh              # Development startup script
-│   ├── export_zip.py             # Export project as ZIP
-│   └── cli.py                    # CLI utilities
-├── requirements.txt              # Python dependencies
-├── .env.example                  # Environment template
-└── README.md                     # This file
+└── .github/workflows/            # CI/CD pipelines
 ```
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
-Create a `.env` file based on `.env.example`:
+Key environment variables (see `.env.example` for full list):
 
 ```bash
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/jobfinder
+DATABASE_URL=postgresql://localhost:5432/jobfinder
 
-# Redis (for Celery)
+# Redis
 REDIS_URL=redis://localhost:6379/0
 
-# Security
+# Security (generate with: python -c "import secrets; print(secrets.token_urlsafe(32))")
 SECRET_KEY=your-secret-key-here
-SESSION_SECRET=your-session-secret-here
+JWT_SECRET_KEY=your-jwt-secret-key-here
 
-# API Keys (optional - defaults to mock data)
+# API Keys (optional - uses RSS/mock if not provided)
 ADZUNA_APP_ID=your-adzuna-app-id
 ADZUNA_API_KEY=your-adzuna-api-key
 
-# Application
-DEBUG=true
-LOG_LEVEL=INFO
+# Privacy
+STORE_RESUME_RAW=false           # Don't store raw resume text (GDPR)
+ANONYMIZE_JOBS=true              # Anonymize job data
+
+# Matching
+EMBEDDING_BACKEND=tfidf          # Use TF-IDF for matching
 ```
 
-### API Keys
+### Getting API Keys
 
-- **Adzuna**: Sign up at https://developer.adzuna.com/ to get API credentials
-- Other connectors (Indeed, Jooble, LinkedIn, Naukri) use mock data by default
+**Adzuna (FREE - Recommended):**
+1. Visit https://developer.adzuna.com/
+2. Sign up and create an application
+3. Copy your App ID and API Key
+4. Free tier: 1000 API calls/month
+
+**Other sources use RSS feeds** (no API keys needed)
 
 ## 📊 Matching Algorithm
 
-The explainable AI matching algorithm uses weighted scoring:
+The AI matching uses TF-IDF (Term Frequency-Inverse Document Frequency):
 
+```python
+# Skills matching with TF-IDF vectors
+skills_similarity = cosine_similarity(resume_vector, job_vector)
+
+# Combined with location and experience matching
+total_score = (skills * 0.6) + (experience * 0.25) + (location * 0.15)
 ```
-Total Score = (Skills Match × 0.6) + (Seniority Match × 0.25) + (Location Match × 0.15)
-```
 
-### Skills Match (60%)
-- Exact skill matching with case-insensitive comparison
-- Weighted by importance (Python, Java, AWS, etc. have higher weights)
-- Normalized to 0-100 scale
-
-### Seniority Match (25%)
-- Matches candidate experience level with job requirements
-- Entry → Junior → Mid → Senior → Lead → Director
-- Partial credit for adjacent levels
-
-### Location Match (15%)
-- Prioritizes Bangalore and Remote positions for India-focused search
-- Supports exact location matching
-- Handles remote work preferences
+**Features:**
+- Weighted skill matching (60%)
+- Experience level matching (25%)
+- Location preference (15%)
+- Explainable results with detailed breakdowns
 
 ## 🧪 Testing
 
-Run the test suite:
-
 ```bash
 # Run all tests
-pytest
+pytest tests/ -v
 
 # Run with coverage
-pytest --cov=api --cov-report=html
+pytest tests/ --cov=api --cov-report=html
 
-# Run specific test file
+# Run specific tests
 pytest tests/test_matcher.py -v
+
+# Validate setup
+python tests/validate_setup.py
 ```
 
 ## 📈 Monitoring
 
 ### Prometheus Metrics
 
-Available at `/metrics` endpoint:
-
+Available at `/metrics`:
 - `http_requests_total`: Total HTTP requests
 - `http_request_duration_seconds`: Request latency
 - `resume_parsing_duration_seconds`: Resume parsing time
@@ -267,11 +205,11 @@ Available at `/metrics` endpoint:
 
 ### Structured Logging
 
-All logs are in JSON format for easy parsing:
+All logs are in JSON format:
 
 ```json
 {
-  "timestamp": "2025-10-27T12:00:00+00:00",
+  "timestamp": "2025-01-27T12:00:00+00:00",
   "level": "INFO",
   "message": "Resume parsed successfully",
   "user_id": 123,
@@ -279,149 +217,87 @@ All logs are in JSON format for easy parsing:
 }
 ```
 
-## 🔐 Security Features
+## 🔐 Security & Privacy
 
-- **JWT Authentication**: Access and refresh tokens
+- **JWT Authentication**: Secure token-based auth
 - **Password Hashing**: bcrypt with salt
+- **GDPR Compliance**: Configurable data retention
+- **Privacy-First**: Raw resume text not stored by default
 - **Rate Limiting**: Prevents abuse
 - **Input Validation**: Pydantic models
-- **SQL Injection Prevention**: SQLAlchemy ORM
-- **CORS Protection**: Configurable origins
+
+See [PRIVACY_AND_GDPR.md](PRIVACY_AND_GDPR.md) for details.
 
 ## 🚢 Deployment
 
-### Local Deployment (Production Mode)
-
-For a production-like environment on your local machine:
-
-1. **Set up production environment file**:
-```bash
-cp .env.example .env.production
-# Edit .env.production with production settings (DEBUG=false, secure keys, etc.)
-```
-
-2. **Install process manager (choose one)**:
-
-**Option A - Using Supervisord** (Recommended for Linux):
-```bash
-# Ubuntu/Debian
-sudo apt-get install supervisor
-
-# macOS
-brew install supervisor
-```
-
-Create `/etc/supervisor/conf.d/jobfinder.conf`:
-```ini
-[program:jobfinder_api]
-command=uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 4
-directory=/path/to/jobfinder-pro
-user=youruser
-autostart=true
-autorestart=true
-
-[program:jobfinder_celery]
-command=celery -A api.app.celery_app worker --loglevel=info --concurrency=4
-directory=/path/to/jobfinder-pro
-user=youruser
-autostart=true
-autorestart=true
-
-[program:jobfinder_frontend]
-command=npm run start
-directory=/path/to/jobfinder-pro/frontend
-user=youruser
-autostart=true
-autorestart=true
-```
-
-Start services:
-```bash
-sudo supervisorctl reread
-sudo supervisorctl update
-sudo supervisorctl start all
-```
-
-**Option B - Using PM2** (Cross-platform):
-```bash
-npm install -g pm2
-
-# Create ecosystem.config.js (see SETUP.md for full config)
-pm2 start ecosystem.config.js
-pm2 save
-pm2 startup
-```
-
-3. **Optional: Set up Nginx reverse proxy**:
-```bash
-# Install Nginx
-sudo apt-get install nginx  # Ubuntu/Debian
-brew install nginx          # macOS
-
-# Configure Nginx (see SETUP.md for full config)
-sudo nginx -t
-sudo systemctl restart nginx
-```
-
 ### Replit Deployment
 
-This project is already configured for Replit:
-1. Click the **Deploy** button at the top right
-2. Select deployment type (Autoscale recommended)
+1. Click the **Deploy** button in Replit
+2. Select **Autoscale** deployment type
 3. Configure:
-   - **Build Command:** `cd frontend && npm run build`
-   - **Run Command:** `cd frontend && npm run start`
-4. Click **Deploy your project**
+   - Build Command: `cd frontend && npm run build`
+   - Run Command: `cd frontend && npm run start`
+4. Deploy and access at your Repl URL
 
-Access your deployed app at `https://<your-repl-name>.<username>.repl.co`
+### Local Production Mode
 
-### Environment-Specific Configuration
+```bash
+# Using PM2 (recommended)
+npm install -g pm2
+pm2 start ecosystem.config.js
+pm2 save
 
-- **Development**: Hot reload, debug logging, mock APIs
-- **Production**: Optimized builds, error reporting, real APIs (set `DEBUG=false` in .env)
+# Or using production script
+chmod +x scripts/production_start.sh
+./scripts/production_start.sh
+```
+
+See [SETUP.md](SETUP.md) for detailed deployment instructions.
 
 ## 🛠 Development Scripts
 
-### Start Development Environment
 ```bash
-./scripts/dev_start.sh
-```
+# Setup
+make install              # Install all dependencies
+make dev                  # Start development environment
 
-### Export Project as ZIP
-```bash
-python scripts/export_zip.py
-```
+# Testing
+make test                 # Run all tests
+make test-coverage        # Run with coverage
+make test-validate        # Validate setup
 
-### CLI Utilities
-```bash
-# Create admin user
-python scripts/cli.py create-admin --email admin@example.com
+# Utilities
+make lint                 # Run linters
+make format               # Auto-format code
+make clean                # Remove build artifacts
 
-# Reindex all jobs
-python scripts/cli.py reindex-jobs
-
-# Database cleanup
-python scripts/cli.py cleanup-old-jobs --days 30
+# Database
+make migrate              # Run migrations
+make migrate-create       # Create new migration
 ```
 
 ## 🤝 Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## 📚 Documentation
+
+- [Quick Start Guide](QUICK_START.md) - 5-minute setup
+- [Local Setup Guide](SETUP_LOCAL.md) - Detailed local development
+- [Deployment Guide](SETUP.md) - Production deployment
+- [GitHub Actions Setup](GITHUB_ACTIONS_SETUP.md) - CI/CD configuration
+- [Privacy & GDPR](PRIVACY_AND_GDPR.md) - Privacy features
+
+## 📞 Support
+
+- GitHub Issues: Report bugs or request features
+- Documentation: Check the docs above
+- Tests: Run `python tests/validate_setup.py` for diagnostics
+
 ## 📜 License
 
 MIT License - see LICENSE file for details
 
-## 🙏 Acknowledgments
-
-- [Adzuna API](https://developer.adzuna.com/) for job data
-- [spaCy](https://spacy.io/) for NLP capabilities
-- [FastAPI](https://fastapi.tiangolo.com/) for the excellent framework
-
-## 📞 Support
-
-For issues and feature requests, please use the GitHub issue tracker.
-
 ---
 
-Built with ❤️ for job seekers in India
+Built with ❤️ for job seekers worldwide | Optimized for India 🇮🇳
