@@ -30,51 +30,57 @@ JobFinder Pro is a complete job matching platform that uses machine learning to 
 - PostgreSQL database
 - Redis server (for Celery)
 
-### Installation
+### Automated Setup (Recommended)
 
-1. **Clone the repository**
+**For complete step-by-step instructions, see [SETUP.md](SETUP.md)**
+
+Run the automated setup script:
+
 ```bash
+# Clone the repository
 git clone <repository-url>
 cd jobfinder-pro
+
+# Run automated setup (Linux/macOS)
+./scripts/local_setup.sh
+
+# Or on Windows (use Git Bash or WSL)
+bash scripts/local_setup.sh
 ```
 
-2. **Set up environment variables**
+### Manual Setup
+
+If you prefer manual setup or the script fails:
+
+1. **Set up environment variables**
 ```bash
 cp .env.example .env
 # Edit .env and add your credentials
 ```
 
-3. **Install Python dependencies**
+2. **Install Python dependencies**
 ```bash
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 ```
 
-4. **Run database migrations**
+3. **Create database and run migrations**
 ```bash
+createdb jobfinder
 alembic upgrade head
 ```
 
-5. **Install frontend dependencies**
+4. **Install frontend dependencies**
 ```bash
-cd frontend
-npm install
-cd ..
+cd frontend && npm install && cd ..
 ```
 
-6. **Start the services**
+5. **Start all services**
 ```bash
-# Terminal 1: Start API server
-uvicorn api.main:app --host 0.0.0.0 --port 5000 --reload
-
-# Terminal 2: Start Celery worker
-celery -A api.app.celery_app worker --loglevel=info
-
-# Terminal 3: Start frontend (development)
-cd frontend && npm run dev
+./scripts/dev_start.sh
 ```
 
-7. **Access the application**
+### Access the Application
 - Frontend: http://localhost:3000
 - API Docs: http://localhost:5000/docs
 - Metrics: http://localhost:5000/metrics

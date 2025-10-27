@@ -1,0 +1,39 @@
+
+name: Deploy to Replit
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  deploy:
+    name: Deploy to Replit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trigger Replit deployment
+        run: |
+          echo "Deployment to Replit should be done through Replit UI"
+          echo "1. Push changes to GitHub"
+          echo "2. In Replit, pull latest changes"
+          echo "3. Click 'Release' → 'Deploy'"
+          echo ""
+          echo "Or use Replit API for automated deployment (requires API token)"
+
+      - name: Post-deployment verification
+        run: |
+          echo "After deployment, verify:"
+          echo "1. Health check: curl https://your-app.repl.co/health"
+          echo "2. API docs: https://your-app.repl.co/docs"
+          echo "3. Metrics: https://your-app.repl.co/metrics"
