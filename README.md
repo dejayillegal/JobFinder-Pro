@@ -32,7 +32,8 @@ JobFinder Pro is a complete job matching platform that uses machine learning to 
 
 ### Automated Setup (Recommended)
 
-**For complete step-by-step instructions, see [SETUP.md](SETUP.md)**
+**For complete local development setup instructions, see [SETUP_LOCAL.md](SETUP_LOCAL.md)**
+**For production deployment guide, see [SETUP.md](SETUP.md)**
 
 Run the automated setup script:
 
