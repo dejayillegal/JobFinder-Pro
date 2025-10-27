@@ -1,0 +1,86 @@
+You are an expert full-stack engineer and software architect. Build a **complete SaaS product** repository named `jobfinder-pro` implementing a production-grade resume-driven job matching platform. Output a full project tree with all files, runnable dev scripts, tests, Docker/Docker-Compose, a Helm chart, and a GitHub Actions CI workflow — packaged as a runnable Replit project that can be executed or exported to GitHub. No placeholders like `<API_KEY>` without also providing working **local dev** fallbacks or mock modes. At the end of generation produce a downloadable ZIP of the entire repository.
+
+Design goals (high level)
+- User uploads resume (PDF/DOCX) → resume is parsed (skills, years_experience, current_role, locations_preferred) → background job fetches matching jobs → compute explainable match scores (factors + weights) → present matches in UI with external apply links.
+- Focus geography: India-wide, prioritize Bangalore and Remote.
+- SaaS features: user auth (JWT), account separation, admin panel to re-run matching, basic rate limiting, logging, metrics.
+
+Required stack & infra
+- Backend: Python 3.11+, FastAPI, SQLAlchemy (or equivalent), Alembic migrations, Pydantic, Uvicorn.
+- Background: Celery + Redis (or Dramatiq if preferred). Provide Docker Compose orchestration for local dev.
+- DB: PostgreSQL (provide local docker config + sqlite fallback for quick Replit mode).
+- Resume parsing: pdfminer.six, python-docx, spaCy (en_core_web_sm) for NER + heuristics. Provide optional sentence-transformers embedding pipeline with local `all-MiniLM-L6-v2` fallback.
+- Connectors:
+  - **Adzuna** — full real connector (use ADZUNA_APP_ID & ADZUNA_APP_KEY env vars). If not present, auto-fallback to mock results.
+  - **Naukri** — Playwright-based **stub** (mock implementation for Replit: implement a Playwright-like parser function that reads local fixtures and includes a real Playwright integration commented/in docs for staging). The connector must include `RobotsChecker` utility and obey robots.txt when Playwright is enabled in staging.
+  - **LinkedIn** — mock connector with curated static data.
+  - **Indeed India**, **Jooble**, **RemoteOK**, **WeWorkRemotely**, **Monster/Foundit**, **TimesJobs**, **Hirect** — implement as modular connectors that support both real API mode (if keys provided) and mock mode (default). Provide at least Indeed and Jooble mock implementations returning 10–20 QA-related jobs for testing.
+- Frontend: Next.js (React) + TypeScript + Tailwind CSS. Provide pages: homepage, upload resume, matches dashboard, admin reindex page, login/register.
+- Observability: Prometheus metrics endpoint (basic), JSON structured logging, and a Grafana dashboard snippet (optional).
+- Security: JWT auth + refresh, file validation & anti-malware check via simple signature check (or containerized clamscan stub) for dev, rate limiting using slowapi/Starlette middleware.
+- Tests: pytest for backend (unit + integration with SQLite/db-in-memory), frontend basic test via jest or recommendation, VCR-like fixtures for connectors.
+- CI/CD: GitHub Actions `ci.yaml` to lint, test, build Docker images (api + frontend), and run helm lint. Provide instructions to set GH secrets for registry and kubeconfig.
+- Deployment: Docker Compose + `deploy/helm/jobfinder-pro` chart with values.yaml, sample templates (api, worker, postgres, ingress, cronjob reindex). Provide k8s sample manifests (namespace, secrets examples).
+- Documentation: README, CONTRIBUTING, MAINTAINER_GUIDE, docs/ethics_and_terms.md that explain robots.txt & legal cautions.
+
+Functional requirements & behavior
+1. **Resume upload endpoint** (`POST /api/resume/upload`):
+   - Accepts PDF/DOCX/TXT. Immediately returns `202 Accepted` with a job id and enqueues a background task.
+   - Background pipeline: parse → create structured profile → run connectors (parallel with controlled concurrency) → compute matches → persist matched jobs (per user) → notify via webhook and in-app notification.
+   - Provide synchronous polling endpoint `/api/resume/status/{job_id}` and websocket event support for progress updates (basic).
+2. **Matching scoring**:
+   - Use embeddings when available; otherwise fallback to keyword overlap.
+   - Score formula: `score = normalize( skills_overlap*0.6 + seniority_match*0.25 + location_match*0.15 ) * 100`
+   - For each match, return top-3 contributing factors as `{name, weight}`.
+3. **Connectors**:
+   - Must respect robots.txt via `RobotsChecker` utility before scraping.
+   - Implement retry with exponential backoff + circuit breaker wrapper for HTTP connectors.
+   - Mock mode must return curated job fixtures tailored to parsed resume skills; provide `--use-mock` config flag and `MOCK_CONNECTORS=true` env default.
+4. **Admin features**:
+   - Admin panel to reindex a user (re-run connectors) and view connector logs.
+   - CLI: `scripts/reindex_user.py --user-id <id>` and `scripts/seed_fixtures.py` to create example data.
+
+Developer/devops conveniences
+- `.env.example` and `.replit` config for quick startup on Replit. Include `run` command that starts docker compose if available; otherwise starts python backend and next dev server.
+- Single command dev script: `scripts/dev_start.sh` that:
+  - Option A: If Docker available, runs `docker compose up --build`.
+  - Option B: Runs services directly: start redis (or use cloud redis if set), start backend uvicorn, start celery worker, start next dev frontend.
+- A `make` file with targets: `make init-db`, `make seed`, `make test`, `make build`.
+- Provide `scripts/export_zip.py` that packages the current repo into `jobfinder-pro.zip` and stores it in Replit workspace for download.
+
+UX & frontend details
+- Job card displays: title, company, location, posted date, short excerpt, external apply link (open new tab), match score (0–100), and top 3 factors with visual bars.
+- Matches page supports filters: location (Bangalore, Remote), minimum score, source.
+- Upload page shows progress and link to matches when complete.
+
+Quality & structure expectations
+- Write idiomatic, well-typed Python (type hints) and TypeScript. Include docstrings and comments where implementation choices are nontrivial.
+- Use modular structure: `api/app/...`, `api/app/services/...`, `frontend/...`, `deploy/...`, `scripts/...`, `tests/...`.
+- Provide a minimal but meaningful Alembic migration for initial schema.
+- Provide unit tests for parser and matcher demonstrating correctness.
+
+Connector priority & search behavior
+- Default search scope: India and Remote. Prefer results that are either remote or located in major Indian cities with Bangalore having higher priority in scoring if within user preferences.
+- When API keys are present for Adzuna or Jooble, run real calls and include results. Otherwise, mock connectors return high-quality fixtures.
+- Ensure deduplication by URL and title/company fuzzy matching.
+
+Security & legal constraints (must appear in README & docs)
+- Warn that scraping LinkedIn may violate their ToS; Playwright scrapers are **developer** tools only and must be used with permission.
+- If a connector's robots.txt prohibits scraping, the connector must abort and log a legal notice in its result.
+
+Final output instructions for Replit generator
+- Create the full repository under `/home/runner/<repl>/jobfinder-pro` with the full file tree and all files populated.
+- Create `jobfinder-pro.zip` in the workspace root containing the full repo.
+- Print to the console at the end:
+  - Path to zip: `./jobfinder-pro.zip`
+  - One-line quickstart: `./scripts/dev_start.sh`
+  - Notes about which connectors are in real mode and which are in mock (based on provided envs).
+- Also produce a short `EXECUTION_SUMMARY.md` describing how to run locally on Replit and how to export to GitHub.
+
+Constraints & guardrails
+- Do not embed real secret credentials in the project. Use clearly-marked `DEV` defaults for local dev where necessary.
+- Avoid copying large proprietary content. Mock fixtures must be fabricated and safe for distribution.
+- Keep the generator's output self-contained and fully runnable in local dev mode (mock connectors on by default).
+
+Now: generate the full repository exactly as specified above. Include all files inline and produce the `jobfinder-pro.zip`. Do not ask clarifying questions.  
+

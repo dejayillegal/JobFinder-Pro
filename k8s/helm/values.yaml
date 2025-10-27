@@ -1,0 +1,131 @@
+# Default values for jobfinder-pro
+
+replicaCount:
+  api: 3
+  celery: 2
+  frontend: 2
+
+image:
+  api:
+    repository: jobfinder/api
+    pullPolicy: IfNotPresent
+    tag: "1.0.0"
+  frontend:
+    repository: jobfinder/frontend
+    pullPolicy: IfNotPresent
+    tag: "1.0.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  api:
+    type: ClusterIP
+    port: 5000
+  frontend:
+    type: LoadBalancer
+    port: 80
+    targetPort: 3000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: jobfinder.example.com
+      paths:
+        - path: /api
+          pathType: Prefix
+          backend: api
+        - path: /
+          pathType: Prefix
+          backend: frontend
+  tls:
+    - secretName: jobfinder-tls
+      hosts:
+        - jobfinder.example.com
+
+resources:
+  api:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  celery:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  frontend:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+autoscaling:
+  enabled: true
+  api:
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  frontend:
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+postgresql:
+  enabled: true
+  auth:
+    username: jobfinder
+    password: jobfinder_password
+    database: jobfinder
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      size: 5Gi
+
+env:
+  SECRET_KEY: "change-this-in-production"
+  DEBUG: "false"
+  LOG_LEVEL: "INFO"
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

@@ -1,0 +1,90 @@
+# Core Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Database
+sqlalchemy==2.0.25
+alembic==1.13.1
+psycopg2-binary==2.9.9
+
+# Background Tasks
+celery==5.3.6
+redis==5.0.1
+
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# Resume Parsing
+pdfminer.six==20221105
+python-docx==1.1.0
+spacy==3.7.2
+# Run: python -m spacy download en_core_web_sm
+
+# Optional Embeddings
+# sentence-transformers==2.3.1
+
+# HTTP Requests
+httpx==0.26.0
+requests==2.31.0
+
+# Rate Limiting
+slowapi==0.1.9
+
+# Monitoring & Logging
+prometheus-client==0.19.0
+python-json-logger==2.0.7
+
+# Utilities
+python-dotenv==1.0.0
+fuzzywuzzy==0.18.0
+python-Levenshtein==0.23.0
+
+# Testing
+pytest==7.4.4
+pytest-asyncio==0.23.3
+pytest-cov==4.1.0
+httpx==0.26.0
+
+# CORS
+fastapi-cors==0.0.6
+
+# WebSockets
+websockets==12.0
+
+# File validation
+python-magic==0.4.27
+
+# Robots.txt parsing
+urllib3==2.1.0
+alembic
+celery
+fastapi
+fuzzywuzzy
+httpx
+passlib[bcrypt]
+pdfminer.six
+prometheus-client
+psycopg2-binary
+pydantic
+pydantic-settings
+pytest
+pytest-asyncio
+pytest-cov
+python-docx
+python-dotenv
+python-jose[cryptography]
+python-json-logger
+python-Levenshtein
+python-magic
+python-multipart
+redis
+requests
+slowapi
+spacy
+sqlalchemy
+uvicorn[standard]
+websockets

@@ -1,0 +1,17 @@
+apiVersion: v2
+name: jobfinder-pro
+description: A Helm chart for JobFinder Pro - AI-powered job matching platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - jobs
+  - matching
+  - ai
+  - saas
+home: https://github.com/yourusername/jobfinder-pro
+sources:
+  - https://github.com/yourusername/jobfinder-pro
+maintainers:
+  - name: JobFinder Team
+    email: team@jobfinder.example.com
