@@ -28,16 +28,31 @@ fi
 
 # Check 2: ALLOWED_EXTENSIONS format
 echo -e "\n${YELLOW}[2/6] Checking ALLOWED_EXTENSIONS format...${NC}"
-if grep -q 'ALLOWED_EXTENSIONS=\["' .env; then
+if grep -q 'ALLOWED_EXTENSIONS=\["pdf", "docx", "txt"\]' .env; then
     echo -e "${GREEN}✓ ALLOWED_EXTENSIONS has valid JSON format${NC}"
 else
-    echo -e "${RED}❌ ALLOWED_EXTENSIONS has invalid format${NC}"
-    sed -i.bak 's/ALLOWED_EXTENSIONS=.*/ALLOWED_EXTENSIONS=["pdf","docx","txt"]/' .env
+    echo -e "${YELLOW}Fixing ALLOWED_EXTENSIONS format...${NC}"
+    sed -i.bak 's/ALLOWED_EXTENSIONS=.*/ALLOWED_EXTENSIONS=["pdf", "docx", "txt"]/' .env
     echo -e "${GREEN}✓ Fixed ALLOWED_EXTENSIONS format${NC}"
 fi
 
 # Check 3: Port availability
 echo -e "\n${YELLOW}[3/6] Checking port availability...${NC}"
+if lsof -Pi :3000 -sTCP:LISTEN -t >/dev/null 2>&1; then
+    echo -e "${RED}❌ Port 3000 is in use${NC}"
+    ERRORS=$((ERRORS + 1))
+else
+    echo -e "${GREEN}✓ Port 3000 is available${NC}"
+fi
+
+if lsof -Pi :8000 -sTCP:LISTEN -t >/dev/null 2>&1; then
+    echo -e "${RED}❌ Port 8000 is in use${NC}"
+    ERRORS=$((ERRORS + 1))
+else
+    echo -e "${GREEN}✓ Port 8000 is available${NC}"
+fi
+
+# Continue with other checks
 if lsof -Pi :3000 -sTCP:LISTEN -t >/dev/null 2>&1; then
     echo -e "${RED}❌ Port 3000 is in use${NC}"
     ERRORS=$((ERRORS + 1))

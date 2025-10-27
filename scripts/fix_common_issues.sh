@@ -27,11 +27,14 @@ fix_env_file() {
         echo -e "${GREEN}✅ .env file exists${NC}"
     fi
     
-    # Fix ALLOWED_EXTENSIONS format
-    if grep -q 'ALLOWED_EXTENSIONS=\["pdf","docx","txt"\]' .env 2>/dev/null; then
-        echo -e "${YELLOW}Fixing ALLOWED_EXTENSIONS JSON format...${NC}"
-        sed -i.bak 's/ALLOWED_EXTENSIONS=\["pdf","docx","txt"\]/ALLOWED_EXTENSIONS=["pdf", "docx", "txt"]/' .env
-        echo -e "${GREEN}✅ Fixed ALLOWED_EXTENSIONS format${NC}"
+    # Fix ALLOWED_EXTENSIONS format (ensure proper spacing)
+    if grep -q 'ALLOWED_EXTENSIONS=' .env 2>/dev/null; then
+        # Check if format needs fixing (missing spaces after commas)
+        if ! grep -q 'ALLOWED_EXTENSIONS=\["pdf", "docx", "txt"\]' .env; then
+            echo -e "${YELLOW}Fixing ALLOWED_EXTENSIONS JSON format...${NC}"
+            sed -i.bak 's/ALLOWED_EXTENSIONS=.*/ALLOWED_EXTENSIONS=["pdf", "docx", "txt"]/' .env
+            echo -e "${GREEN}✅ Fixed ALLOWED_EXTENSIONS format${NC}"
+        fi
     fi
 }
 
@@ -47,6 +50,14 @@ kill_port_processes() {
         echo -e "${GREEN}✅ Freed port 3000${NC}"
     else
         echo -e "${GREEN}✅ Port 3000 is available${NC}"
+    fi
+    
+    # Also check port 5000 in case it's being used
+    if lsof -Pi :5000 -sTCP:LISTEN -t >/dev/null 2>&1; then
+        echo -e "${YELLOW}Killing process on port 5000...${NC}"
+        lsof -ti:5000 | xargs kill -9 2>/dev/null || true
+        sleep 1
+        echo -e "${GREEN}✅ Freed port 5000${NC}"
     fi
     
     # Check and kill port 8000 (Backend)
