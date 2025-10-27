@@ -25,6 +25,14 @@ cd frontend
 echo -e "\n${YELLOW}Installing frontend dependencies...${NC}"
 npm install --silent
 
+# Check if port 5000 is already in use
+if lsof -Pi :5000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+    echo -e "${RED}❌ Port 5000 is already in use${NC}"
+    echo -e "${YELLOW}Finding and killing process on port 5000...${NC}"
+    lsof -ti:5000 | xargs kill -9 2>/dev/null || true
+    sleep 2
+fi
+
 echo -e "\n${GREEN}✅ Starting Frontend on port 5000...${NC}"
 echo -e "${BLUE}Frontend: http://0.0.0.0:5000${NC}\n"
 

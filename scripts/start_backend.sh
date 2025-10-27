@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 set -e
@@ -33,7 +32,15 @@ python -m spacy download en_core_web_sm --quiet 2>/dev/null || echo -e "${YELLOW
 echo -e "\n${YELLOW}Running database migrations...${NC}"
 alembic upgrade head
 
-echo -e "\n${GREEN}✅ Starting API Server on port 8000...${NC}"
+# Check if port 8000 is already in use
+if lsof -Pi :8000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+    echo -e "${RED}❌ Port 8000 is already in use${NC}"
+    echo -e "${YELLOW}Finding and killing process on port 8000...${NC}"
+    lsof -ti:8000 | xargs kill -9 2>/dev/null || true
+    sleep 2
+fi
+
+echo -e "\n${GREEN}✅ Starting Backend API Server on port 8000...${NC}"
 echo -e "${BLUE}API Docs: http://0.0.0.0:8000/docs${NC}"
 echo -e "${BLUE}Health: http://0.0.0.0:8000/api/health${NC}\n"
 

@@ -413,21 +413,59 @@ python -c "import spacy; nlp = spacy.load('en_core_web_sm')"
 
 #### 4. Port Already in Use
 
-**Error:** `Address already in use` or `OSError: [Errno 98]`
+**Error:** `Address already in use` or `OSError: [Errno 98]` or `EADDRINUSE`
 
 **Solution:**
 ```bash
-# Find process using port 8000
-lsof -i :8000  # macOS/Linux
-netstat -ano | findstr :8000  # Windows
+# Find and kill process using port 5000 (Frontend)
+lsof -ti:5000 | xargs kill -9  # macOS/Linux
+netstat -ano | findstr :5000  # Windows (then taskkill)
 
-# Kill the process
-kill -9 <PID>  # macOS/Linux
-taskkill /PID <PID> /F  # Windows
+# Find and kill process using port 8000 (Backend)
+lsof -ti:8000 | xargs kill -9  # macOS/Linux
 
 # Or use different ports:
-uvicorn api.main:app --port 8001 --reload
-cd frontend && PORT=3001 npm run dev
+# Backend:
+uvicorn api.main:app --host 0.0.0.0 --port 8001 --reload
+
+# Frontend (edit package.json):
+cd frontend
+# Change "dev": "next dev -p 5001 -H 0.0.0.0"
+npm run dev
+```
+
+#### 4a. Missing .env File
+
+**Error:** `error parsing value for field "ALLOWED_EXTENSIONS"` or `.env: No such file or directory`
+
+**Solution:**
+```bash
+# Create .env from example
+cp .env.example .env
+
+# Generate secure secrets
+python -c "import secrets; print('SECRET_KEY=' + secrets.token_urlsafe(32))" >> .env
+python -c "import secrets; print('SESSION_SECRET=' + secrets.token_urlsafe(32))" >> .env
+
+# Verify .env exists and has correct format
+cat .env | grep ALLOWED_EXTENSIONS
+# Should show: ALLOWED_EXTENSIONS=["pdf","docx","txt"]
+```
+
+#### 4b. Invalid ALLOWED_EXTENSIONS Format
+
+**Error:** `json.decoder.JSONDecodeError: Expecting value: line 1 column 2`
+
+**Solution:**
+```bash
+# Fix ALLOWED_EXTENSIONS in .env file
+# Change from: ALLOWED_EXTENSIONS=pdf,docx,txt
+# To: ALLOWED_EXTENSIONS=["pdf","docx","txt"]
+
+# Use sed to fix automatically (macOS/Linux)
+sed -i.bak 's/ALLOWED_EXTENSIONS=.*/ALLOWED_EXTENSIONS=["pdf","docx","txt"]/' .env
+
+# Or manually edit .env and ensure it's valid JSON array format
 ```
 
 #### 5. Alembic Migration Errors
