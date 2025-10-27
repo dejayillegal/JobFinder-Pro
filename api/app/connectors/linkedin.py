@@ -13,9 +13,14 @@ class LinkedInConnector(BaseConnector):
     
     def __init__(self, use_mock: bool = None):
         """Initialize LinkedIn connector."""
+        import os
         from ..core.config import settings
+        
+        # Check for API key in environment (optional)
+        self.api_key = os.getenv("LINKEDIN_API_KEY", "")
+        
         if use_mock is None:
-            use_mock = settings.MOCK_CONNECTORS
+            use_mock = settings.MOCK_CONNECTORS or not self.api_key
         super().__init__(use_mock=use_mock)
         if not use_mock:
             logger.warning("LinkedIn connector uses mock data only. Scraping LinkedIn may violate their Terms of Service.")

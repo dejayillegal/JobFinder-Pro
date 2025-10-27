@@ -13,9 +13,14 @@ class JoobleConnector(BaseConnector):
     
     def __init__(self, use_mock: bool = None):
         """Initialize Jooble connector."""
+        import os
         from ..core.config import settings
+        
+        # Check for API key in environment (optional)
+        self.api_key = os.getenv("JOOBLE_API_KEY", "")
+        
         if use_mock is None:
-            use_mock = settings.MOCK_CONNECTORS
+            use_mock = settings.MOCK_CONNECTORS or not self.api_key
         super().__init__(use_mock=use_mock)
     
     def search_jobs(

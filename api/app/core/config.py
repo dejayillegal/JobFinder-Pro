@@ -37,11 +37,6 @@ class Settings(BaseSettings):
     JOOBLE_API_KEY: str = ""
     INDEED_PUBLISHER_ID: str = ""
 
-    # Other Job Board APIs (optional)
-    indeed_api_key: str = ""
-    linkedin_api_key: str = ""
-    naukri_api_key: str = ""
-
     # Resume Processing
     MAX_FILE_SIZE_MB: int = 10
     ALLOWED_EXTENSIONS: List[str] = ["pdf", "docx", "txt"]
