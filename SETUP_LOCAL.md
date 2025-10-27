@@ -434,22 +434,22 @@ cd frontend
 npm run dev
 ```
 
-#### 4a. Missing .env File
+#### 4a. Missing .env File or JSON Parse Error
 
-**Error:** `error parsing value for field "ALLOWED_EXTENSIONS"` or `.env: No such file or directory`
+**Error:** `error parsing value for field "ALLOWED_EXTENSIONS"` or `.env: No such file or directory` or `JSONDecodeError: Expecting value`
 
 **Solution:**
 ```bash
 # Create .env from example
 cp .env.example .env
 
-# Generate secure secrets
-python -c "import secrets; print('SECRET_KEY=' + secrets.token_urlsafe(32))" >> .env
-python -c "import secrets; print('SESSION_SECRET=' + secrets.token_urlsafe(32))" >> .env
+# If you still get JSON errors, check that ALLOWED_EXTENSIONS in .env is valid JSON:
+# Correct format (with spaces after commas):
+ALLOWED_EXTENSIONS=["pdf", "docx", "txt"]
 
-# Verify .env exists and has correct format
-cat .env | grep ALLOWED_EXTENSIONS
-# Should show: ALLOWED_EXTENSIONS=["pdf","docx","txt"]
+# Incorrect format (will cause errors):
+ALLOWED_EXTENSIONS=["pdf","docx","txt"]  # Missing spaces
+ALLOWED_EXTENSIONS='["pdf", "docx", "txt"]'  # Should not use quotes around the array
 ```
 
 #### 4b. Invalid ALLOWED_EXTENSIONS Format
@@ -559,9 +559,9 @@ npm install
    ```bash
    # Create new migration
    alembic revision -m "description of change"
-   
+
    # Edit the generated file in alembic/versions/
-   
+
    # Apply migration
    alembic upgrade head
    ```

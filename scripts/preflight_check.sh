@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 set -e
@@ -39,11 +38,11 @@ fi
 
 # Check 3: Port availability
 echo -e "\n${YELLOW}[3/6] Checking port availability...${NC}"
-if lsof -Pi :5000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
-    echo -e "${RED}❌ Port 5000 is in use${NC}"
+if lsof -Pi :3000 -sTCP:LISTEN -t >/dev/null 2>&1; then
+    echo -e "${RED}❌ Port 3000 is in use${NC}"
     ERRORS=$((ERRORS + 1))
 else
-    echo -e "${GREEN}✓ Port 5000 is available${NC}"
+    echo -e "${GREEN}✓ Port 3000 is available${NC}"
 fi
 
 if lsof -Pi :8000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
