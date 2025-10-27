@@ -22,7 +22,16 @@ fi
 
 # Load environment (properly handle values with special characters)
 set -a
-source .env
+while IFS= read -r line || [[ -n "$line" ]]; do
+    # Skip empty lines and comments
+    if [[ -z "$line" ]] || [[ "$line" =~ ^[[:space:]]*# ]]; then
+        continue
+    fi
+    # Only export valid variable assignments
+    if [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
+        export "$line"
+    fi
+done < .env
 set +a
 
 echo -e "\n${YELLOW}Checking Python dependencies...${NC}"
